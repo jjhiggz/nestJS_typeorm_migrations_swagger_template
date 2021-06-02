@@ -1,73 +1,116 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo_text.svg" width="320" alt="Nest Logo" /></a>
-</p>
+# Dockerized Postgresql, Typeorm with Migrations and Transactions Nest Config
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## 1. Create a .env file
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+In it you should have something like this
 
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Installation
-
-```bash
-$ npm install
+```
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_USER=admin
+POSTGRES_PASSWORD=admin
+POSTGRES_DB=testDB
+PORT=5000
 ```
 
-## Running the app
+## 2. Create a docker.env file
 
-```bash
-# development
-$ npm run start
+In this you should have something like this
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+```
+POSTGRES_USER=admin
+POSTGRES_PASSWORD=admin
+POSTGRES_DB=testDB
+PGADMIN_DEFAULT_EMAIL=admin@admin.com
+PGADMIN_DEFAULT_PASSWORD=admin
 ```
 
-## Test
+## 3. Spin Up Your Docker Container
 
-```bash
-# unit tests
-$ npm run test
+run `docker compose up -d`
 
-# e2e tests
-$ npm run test:e2e
+When you are done working on your project you can run `docker compose down` to end the docker container
 
-# test coverage
-$ npm run test:cov
+## 4 (optional): Connect to PGAdmin
+
+Technically since we have swaggerUI, you may not necessarily have the need for PGAdmin, but its probably a good idea to hook it up. Go ahead and open up the docker app, click "open in browser" on the pgAdmin image in the docker image created.
+
+You will need to login using the email and password provided in the docker.env file.
+
+Once logged in, right click on the Servers row in the explorer on the left. --> Create --> Server. This should pop open a window
+
+Call the name whatever you want then go to the connection page. Here is where things get a little bit tricky.
+
+You will need to find the IP address that docker created for your postgres image. Type in `docker network ls` and you should get back something that looks like this:
+
+```txt
+NETWORK ID     NAME                           DRIVER    SCOPE
+a031bac1f556   bridge                         bridge    local
+0588834baa33   host                           host      local
+92e955f995fd   none                           null      local
+254d3d3171d8   rebuild-connection_postgres    bridge    local
+78d8c8c8ddb4   simple-many-to-many_default    bridge    local
+17fdc3aa2fb9   simple-many-to-many_postgres   bridge    local
 ```
 
-## Support
+The hash for our postgres image is 17f... so we can now inspect that network specifically using `docker network inspect 17`. **Note** *you only need enough letters from the hash to differentiate it from the others. In this case 17 is unique so it will work fine, and you don't have to type out the whole hash.*
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+You should get back something like this:
 
-## Stay in touch
+```txt
+[
+    {
+        "Name": "simple-many-to-many_postgres",
+        "Id": "17fdc3aa2fb9f0d597a92e84c757c22f64307582e6f7ded6ed05de8b7ae8ad88",
+        "Created": "2021-06-02T04:20:07.3002283Z",
+        "Scope": "local",
+        "Driver": "bridge",
+        "EnableIPv6": false,
+        "IPAM": {
+            "Driver": "default",
+            "Options": null,
+            "Config": [
+                {
+                    "Subnet": "172.22.0.0/16",
+                    "Gateway": "172.22.0.1"
+                }
+            ]
+        },
+        "Internal": false,
+        "Attachable": false,
+        "Ingress": false,
+        "ConfigFrom": {
+            "Network": ""
+        },
+        "ConfigOnly": false,
+        "Containers": {
+            "65d18556598c91915cfbf1047d8e8e2c2f0531c9aace31f882918270ee03650d": {
+                "Name": "pgadmin",
+                "EndpointID": "c02204144acfe2de827cf3be29c74556d8cc703ad1545f0a18ecf6fe974ea9b7",
+                "MacAddress": "02:42:ac:16:00:03",
+                "IPv4Address": "172.22.0.3/16",
+                "IPv6Address": ""
+            },
+            "a4d909f09b7b79cd5f324632f334d43b879946ffe1024d2d9bd4e6fc8933e752": {
+                "Name": "postgres",
+                "EndpointID": "f152477b5324cd0e3ac625516b23118a99aa72dd75c0c0204993f08f8e01f23c",
+                "MacAddress": "02:42:ac:16:00:02",
+                "IPv4Address": "172.22.0.2/16",
+                "IPv6Address": ""
+            }
+        },
+        "Options": {},
+        "Labels": {
+            "com.docker.compose.network": "postgres",
+            "com.docker.compose.project": "simple-many-to-many",
+            "com.docker.compose.version": "1.0-alpha"
+        }
+    }
+]
+```
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+In this case the postgres ip address is 172.22.0.2 that is what you wil use to connect to pg admin, along with the other credentials defined in the .env file.
 
-## License
+## A couple of notes
 
-Nest is [MIT licensed](LICENSE).
+I think a fundamental problem with NestJS is getting the initial setup for people who are beginners. This template is a good starting point for a real api. I did a whole bunch of work on some code with synchronize set to true. Because typeorm can generate migrations for you, I'd reccomend making migrations as you go. This is hands down the best video series I've seen [here](https://www.youtube.com/watch?v=sNosL578ECo&list=PLlaDAvA2MhR2jb8zavu6I-w1BA878aHcB&index=3)
